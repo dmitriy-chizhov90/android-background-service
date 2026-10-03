@@ -9,6 +9,6 @@ android {
 dependencies {
     api(project(":android-runtime"))
     implementation("androidx.core:core-ktx:1.17.0")
-    
+
 }
 afterEvaluate { publishing { publications { create<MavenPublication>("release") { from(components["release"]) } } } }
