@@ -42,10 +42,20 @@ class BackgroundRuntimeTest {
         service.onStartCommand(Intent(), 0, 1)
         service.onStartCommand(Intent("refresh"), 0, 2)
         assertEquals(1, service.executions)
-        assertEquals(listOf(ComponentStatus.RUNNING), service.states)
+        assertEquals(listOf(ComponentStatus.RUNNING, ComponentStatus.RUNNING), service.states)
         controller.destroy()
         assertTrue(service.released)
         assertEquals(ComponentStatus.STOPPED, service.states.last())
+    }
+    @Test fun `repeated start reconfirms service ownership after host marks starting`() {
+        val controller = Robolectric.buildService(Service::class.java).create()
+        val service = controller.get()
+        service.onStartCommand(Intent(), 0, 1)
+        service.states += ComponentStatus.STARTING
+        service.onStartCommand(Intent(), 0, 2)
+        assertEquals(ComponentStatus.RUNNING, service.states.last())
+        assertEquals(2, service.executions)
+        controller.destroy()
     }
     @Test fun `diagnostics history survives new instance and is bounded`() {
         val context = ApplicationProvider.getApplicationContext<Context>()
