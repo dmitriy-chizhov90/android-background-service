@@ -1,7 +1,7 @@
 # Android Background Service
 
-Apache-2.0 framework for Android background execution. It contains no networking,
-Git, authentication or message model. Android 8 / API 26+, compile SDK 36, JDK 21
+Apache-2.0 framework for Android background execution. Applications supply their
+own workloads and domain logic. Android 8 / API 26+, compile SDK 36, JDK 21
 for the build; published JVM bytecode targets Java 11.
 
 ## Modules
@@ -42,7 +42,7 @@ The application and library share one WorkManager instance. The library does not
 replace its initializer, factory, Application class or network configuration.
 `publishToMavenLocal` is available for evaluating artifacts. Configure an artifact
 repository and pin a released version before using binary dependencies in CI.
-The initial integrations use a source checkout in CI instead.
+Composite builds can use a source checkout in CI.
 
 ## Host responsibilities
 
@@ -64,8 +64,7 @@ must not be inferred from a worker intentionally stopped while FGS runs.
 
 `BackgroundWork.periodic` uses stable unique work with UPDATE. `once` appends a
 local reconciliation request without cancelling an in-flight reconciliation.
-Work implementations and cancellation belong to the host. KotoChat retains its
-socket cancellation registry and work identities. Orgi retains repository locking.
+Work implementations, cancellation and workload-specific locking belong to the host.
 
 Use `BackgroundCapabilities.read` after returning from system settings; do not
 infer a grant from an Activity result. Notification visibility, channel state,
@@ -79,9 +78,9 @@ entries and is stored locally. Do not record task contents, credentials or URLs.
 ## Android limits
 
 FGS support is optional. Applications declare their own service type and
-permissions; this library declares no messaging or battery-exemption permission.
-KotoChat provides remote-messaging work. Local calendar reminders do not qualify
-as remote messaging. Orgi uses WorkManager for Git and AlarmManager for deadlines.
+permissions appropriate to their workload. The host is responsible for meeting
+Android's requirements for the selected foreground service type and requesting
+any battery exemption.
 
 WorkManager delays and inexact alarms are best effort. Exact alarms require access
 on recent Android versions and are still subject to idle quotas. A foreground
@@ -92,14 +91,13 @@ work and boot reconciliation in addition to service callbacks.
 
 ## Migration / validation
 
-KotoChat preserves its worker class names, notification channel/ID, settings and
-transport; service lifecycle, handoff, cadence, capability reads and persisted
-history use this library. App-scoped chat visibility and transport source selection
-remain in its domain. Orgi's sync keeps its periodic work identity and connectivity
-constraint; reminders are a separate offline workload.
+When migrating an application, preserve its worker class names, unique work names,
+notification channels and IDs, persisted settings, alarm identities and workload
+constraints. Delegate service lifecycle, handoff, cadence, capability reads and
+diagnostic history to this library. Application-specific behavior remains in the host.
 
 Automated coverage includes handoff ordering, stale process callbacks, execution
 leases, service cleanup, permission-independent delivery and bounded history.
 Device checks still needed for OEM behavior: Doze, force-stop, reboot, permission
-revocation and audible sound quality. No Android device was attached during the
-initial implementation.
+revocation. Validate these behaviors on devices representative of the hosting
+application's supported environments.
