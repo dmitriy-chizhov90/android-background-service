@@ -52,7 +52,6 @@ abstract class ManagedForegroundService : Service() {
                 if (Build.VERSION.SDK_INT >= 29) startForeground(notificationId, notification(), serviceType)
                 else startForeground(notificationId, notification())
                 started = true
-                observed(ComponentStatus.RUNNING, "service_started")
             } catch (error: RuntimeException) {
                 reason = "start_failed:${error.javaClass.simpleName}"
                 observed(ComponentStatus.FAILED, reason)
@@ -60,6 +59,9 @@ abstract class ManagedForegroundService : Service() {
                 return START_NOT_STICKY
             }
         }
+        // A repeated start may have moved the host to STARTING. Confirm actual
+        // ownership even when Android is reusing an already foreground service.
+        observed(ComponentStatus.RUNNING, "service_running")
         lease.refresh()
         if (intent?.action != refreshAction) {
             try { execute(intent) } catch (error: RuntimeException) {
