@@ -9,7 +9,7 @@ class SharedPreferencesPermissionStatePersistence(
     context: Context,
     preferencesName: String = PREFERENCES_NAME,
 ) : PermissionStatePersistence {
-    private val preferences = context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
+    private val preferences = context.applicationContext.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
 
     override fun load(): PermissionManagerState {
         val raw = preferences.getString(KEY_STATE, null) ?: return PermissionManagerState()

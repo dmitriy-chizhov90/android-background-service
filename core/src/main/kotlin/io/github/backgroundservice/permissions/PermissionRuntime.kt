@@ -5,6 +5,7 @@ class PermissionRuntime(
     private val manager: PermissionManager,
     private val onStateChanged: (PermissionManagerState) -> Unit = {},
 ) {
+    private val observers = mutableSetOf<(PermissionManagerState) -> Unit>()
     private val queuedEffects = ArrayDeque<PermissionEffect>()
     private var draining = false
     private var executor: DomainPermissionEffectExecutor? = null
@@ -12,6 +13,13 @@ class PermissionRuntime(
 
     val warningCapabilities: Set<PermissionCapability>
         get() = manager.state.warningCapabilities
+
+    @Synchronized
+    fun observe(listener: (PermissionManagerState) -> Unit): AutoCloseable {
+        observers += listener
+        listener(manager.state)
+        return AutoCloseable { synchronized(this) { observers -= listener } }
+    }
 
     @Synchronized
     fun processStarted() = dispatch(PermissionEvent.ApplicationStarted)
@@ -46,6 +54,7 @@ class PermissionRuntime(
     private fun dispatch(event: PermissionEvent) {
         queuedEffects.addAll(manager.dispatch(event))
         onStateChanged(manager.state)
+        observers.toList().forEach { it(manager.state) }
         drain()
     }
 

@@ -12,6 +12,19 @@ class PermissionSafetyTest {
     }
     private fun denied() = PermissionEvent.PermissionObserved(notification, PermissionGrantState.DENIED, true, 10)
 
+    @Test fun `observers get current state and stop after disposal`() {
+        val store = Storage()
+        val runtime = PermissionRuntime(PermissionManager(store.load(), store))
+        var calls = 0
+        val observation = runtime.observe { calls++ }
+        assertEquals(1, calls)
+        runtime.processStarted()
+        assertEquals(2, calls)
+        observation.close()
+        runtime.foregrounded()
+        assertEquals(2, calls)
+    }
+
     @Test fun `default policy never launches system UI automatically`() {
         val store = Storage()
         val manager = PermissionManager(store.load(), store)

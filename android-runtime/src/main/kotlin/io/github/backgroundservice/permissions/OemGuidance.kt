@@ -4,7 +4,7 @@ import android.content.Context
 
 /** User acknowledgement is never evidence that the manufacturer enabled autostart. */
 class OemGuidance(context: Context, preferencesName: String = "background.oem") {
-    private val prefs = context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
+    private val prefs = context.applicationContext.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
     val shown: Boolean get() = prefs.getBoolean("oem_dialog_shown_v1", false)
     val confirmedByUser: Boolean get() = prefs.getBoolean("confirmed_by_user", false)
     val lastOpenedMillis: Long get() = prefs.getLong("last_opened", 0)
