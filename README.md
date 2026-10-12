@@ -101,3 +101,29 @@ leases, service cleanup, permission-independent delivery and bounded history.
 Device checks still needed for OEM behavior: Doze, force-stop, reboot, permission
 revocation. Validate these behaviors on devices representative of the hosting
 application's supported environments.
+
+## Permissions and system settings
+
+`core` owns `PermissionManager`, its persisted state and the event/effect runtime.
+`android-runtime` provides `ActivityPermissionPlatform`, `PermissionSettingsController`,
+`SharedPreferencesPermissionStatePersistence` and manufacturer-specific `OemSettings`.
+`diagnostics-ui` includes the optional `PermissionSettingsDialog`.
+
+Configure only capabilities needed by enabled features: notifications, channels,
+battery optimization exemption and exact alarms. Pass your channel IDs to the platform.
+Missing channels remain unknown until the app creates them. Battery exemption is advisory.
+OEM autostart is not verifiable through public Android APIs; acknowledgement is stored separately.
+
+For an Activity, create a `PermissionSettingsController(activity, namespace, channelIds,
+enabledCapabilities, onChanged)`. Call `refresh()` in `onResume` and after the notification
+permission callback (request code `ActivityPermissionPlatform.NOTIFICATION_PERMISSION_REQUEST_CODE`).
+Render `state.warningCapabilities`, or call `PermissionSettingsDialog.show(activity, controller)`.
+Call `request(capability)` only from a user action. Never launch permission UI from a worker or service.
+
+The default manager policy makes no automatic requests. Hosts may opt into one-time
+requests with `automaticRequests`; attempts are saved before launching system UI, including
+when the process dies while the dialog is open. Denials remain actionable without repeated prompts.
+The v1 permission JSON and OEM shown flag can be read in place by configuring the legacy preference name.
+A dialog result never grants access: Android is queried again after returning.
+Apps using the direct battery-exemption prompt must declare
+`android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`; otherwise the adapter opens the general battery settings.
